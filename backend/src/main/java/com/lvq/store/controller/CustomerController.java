@@ -9,9 +9,9 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,12 +57,13 @@ public class CustomerController {
 		customerService.removeFromCartService(products, customerId);
 		Customer customer = customerRepository.findByCustomerId(customerId);
 		String total = productService.getTotalAmount(products);
-		Order order = new Order(products, customer, "false", null, new BigDecimal(total));
+		ObjectId id = new ObjectId();
+		Order order = new Order(id.toHexString(), products, customer, "false", null, new BigDecimal(total));
 		orderRepository.insert(order);
-		return "Checking order";
+		return id.toHexString();
 	}
 	
-	@RequestMapping(value = "customer/delete-order", method =RequestMethod.POST)
+	@RequestMapping(value = "/customer/delete-order", method =RequestMethod.POST)
 	public String removeOrder(@RequestBody String orderId) {
 		orderId = orderId.replace("\"", "");
 		Order order = orderRepository.findById(orderId).get();
@@ -70,13 +71,21 @@ public class CustomerController {
 		return "Remove order!";
 	}
 	
+	@RequestMapping(value = "customer/delete-order/{orderId}", method =RequestMethod.POST)
+	public String deleteOrder(@PathVariable String orderId) {
+		orderId = orderId.replace("\"", "");
+		Order order = orderRepository.findById(orderId).get();
+		orderRepository.delete(order);
+		return "Remove order!";
+	}
+	
 	@RequestMapping(value = "/customer/submit-order/{id}", method =RequestMethod.POST)
-	public String submitOrder(@RequestBody Order order, @PathVariable("id") String customerId) {
+	public Order submitOrder(@RequestBody Order order, @PathVariable("id") String customerId) {
 		System.out.println("submit order");
 		order.setOrderDate(new Date());
 		order.setSubmitted("true");
 		orderService.submittedOrder(order);
-		return "Submit order successfully!";
+		return order;
 	}
 	
 	@RequestMapping(value = "/customer/remove-from-cart/{id}", method =RequestMethod.POST)
@@ -91,8 +100,8 @@ public class CustomerController {
 	public String addToCart(@RequestBody ProductDTO product, @PathVariable("id") String customerId) {
 		System.out.println("adding products to cart");
 		Customer customer = customerRepository.findByCustomerId(customerId);
-		Map<String, Integer> customerCart = new HashMap<>();
-		customerCart = customer.getCart();
+		Map<String, Integer> customerCart = customer.getCart();
+		if (customerCart == null) customerCart = new HashMap<>();
 		String key = product.getProductId();
 		if (customerCart.containsKey(key)) {
 			customerCart.put(key, customerCart.get(key) + product.getQuantity());
@@ -115,9 +124,9 @@ public class CustomerController {
 	@RequestMapping(value = "/customer/sign-up", method =RequestMethod.POST)
 	public List<String> registerCustomer(@RequestBody Customer newCustomer, HttpServletResponse response) {
 		System.out.println("adding customer");
-		boolean isRegister =  customerService.findCustomerByName(newCustomer.getUsername()) != null ? true : false;
+		boolean isRegister =  customerService.findCustomerByName(newCustomer.getUsername()) == null ? true : false;
 		List<String> rs = new ArrayList<>();
-		if (!isRegister) {
+		if (isRegister) {
 			System.out.println("vao");
 			customerService.addCustomer(newCustomer);
 			rs.add("Sign up successfully!");
@@ -128,33 +137,33 @@ public class CustomerController {
 					
 	}
 	
-	@RequestMapping(value = "/customer/update", method =RequestMethod.PUT)
-	public String updateCustomer(@ModelAttribute("updatedCustomer") Customer updatedCustomer) {
-		customerService.updateCustomer(updatedCustomer);
-		return "Customer is updated.";
-	}
-	
-	@RequestMapping(value = "/customer/delete/{id}", method =RequestMethod.DELETE)
-	public String deleteCustomer(@PathVariable("id") String id) {
-		customerService.deleteCustomer(id);
-		return "Account is deleted.";
-	}
-	
-//	@RequestMapping(value = "/customer/{id}", method =RequestMethod.GET)
-//	public Customer getCustomer(@PathVariable("id") String id) {
-//		System.out.println(customerRepository.findByCustomerId(id).toString());
-//		return customerRepository.findByCustomerId(id);
-//	}
-	
-	@RequestMapping(value = "/customer/all", method =RequestMethod.GET)
-	public List<Customer> getAllCustomers() {
-		System.out.println(customerService.listAllCustomer().toString());
-		return customerService.listAllCustomer();
-	}
-	
 	@RequestMapping(value = "/customer/username/{name}", method =RequestMethod.GET)
 	public Customer getCustomerId(@PathVariable("name") String username) {
 		return customerRepository.findByUsername(username);
 	}
+	
+//	@RequestMapping(value = "/customer/update", method =RequestMethod.PUT)
+//	public String updateCustomer(@ModelAttribute("updatedCustomer") Customer updatedCustomer) {
+//		customerService.updateCustomer(updatedCustomer);
+//		return "Customer is updated.";
+//	}
+//	
+	@RequestMapping(value = "/customer/delete/{name}", method =RequestMethod.DELETE)
+	public String deleteCustomer(@PathVariable("name") String username) {
+		customerService.deleteCustomerByUsername(username);
+		return "Account is deleted.";
+	}
+	
+	@RequestMapping(value = "/customer/{id}", method =RequestMethod.GET)
+	public Customer getCustomer(@PathVariable("id") String id) {
+		return customerRepository.findByCustomerId(id);
+	}
+	
+//	@RequestMapping(value = "/customer/all", method =RequestMethod.GET)
+//	public List<Customer> getAllCustomers() {
+//		return customerService.listAllCustomer();
+//	}
+	
+	
 	
 }

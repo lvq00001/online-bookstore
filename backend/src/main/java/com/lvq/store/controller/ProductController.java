@@ -35,7 +35,8 @@ public class ProductController {
 	@RequestMapping("/product/{keyWord}")
 	public List<Product> findProducts(@PathVariable("keyWord") String keyWord) {
 		System.out.println("Search product by keyWord");
-		return productRepository.findProductByKeyWord(keyWord);
+		List<Product> rs = productRepository.findProductByKeyWord(keyWord);
+		return rs;
 	}
 	
 	@RequestMapping("/product/all/{number}")
@@ -43,26 +44,26 @@ public class ProductController {
 		System.out.println("Search product by " + number);
 		PageRequest sortedByName = PageRequest.of(Integer.parseInt(number), 5, Sort.by("productId"));
 		System.out.println(sortedByName.toString());
-		
-		return productRepository.findAll(sortedByName).getContent();
+		List<Product> rs = productRepository.findAll(sortedByName).getContent();
+		return rs;
 	}
 	
-	@RequestMapping(value = "/product/add", method =RequestMethod.POST)
-	public String addProduct(@ModelAttribute("newProduct") Product newProduct) {
-		productService.addProduct(newProduct);
-		System.out.println("New proudct is added.");
-		return "New proudct is added.";
-	}
+//	@RequestMapping(value = "/product/add", method =RequestMethod.POST)
+//	public String addProduct(@ModelAttribute("newProduct") Product newProduct) {
+//		productService.addProduct(newProduct);
+//		System.out.println("New proudct is added.");
+//		return "New proudct is added.";
+//	}
 	
-	@RequestMapping(value = "/product/delete/{id}", method =RequestMethod.DELETE)
-	public String deleteProduct(@PathVariable("id") String id) {
-		productService.deleteProduct(id);
-		return "Product is deleted.";
-	}
-	
-	@RequestMapping(value = "/product/update", method =RequestMethod.PUT)
-	public String updateProduct(@ModelAttribute("updatedProduct") Product updatedProduct) {
-		productService.updateProduct(updatedProduct);
-		return "Product is updated.";
-	}
+//	@RequestMapping(value = "/product/delete/{id}", method =RequestMethod.DELETE)
+//	public String deleteProduct(@PathVariable("id") String id) {
+//		productService.deleteProduct(id);
+//		return "Product is deleted.";
+//	}
+//	
+//	@RequestMapping(value = "/product/update", method =RequestMethod.PUT)
+//	public String updateProduct(@ModelAttribute("updatedProduct") Product updatedProduct) {
+//		productService.updateProduct(updatedProduct);
+//		return "Product is updated.";
+//	}
 }
